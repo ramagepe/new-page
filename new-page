@@ -14,13 +14,10 @@ PARENT_PAGE_NAME=$2
 # Convert the page name to camel case for folder name
 function toCamelCase() {
 	local string="$1"
-	local words=($string)
 	local result=""
 
-	for word in "${words[@]}"; do
-		result+=$(tr '[:lower:]' '[:upper:]' <<<${word:0:1})
-		result+=$(tr '[:upper:]' '[:lower:]' <<<${word:1})
-	done
+	# Use sed to capitalize the first letter of each word
+	result=$(echo "$string" | sed 's/\b\(.\)/\u\1/g')
 
 	echo "$result"
 }
