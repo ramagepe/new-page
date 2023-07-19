@@ -1,12 +1,15 @@
 #!/bin/bash
 
-if [ "$#" -ne 1 ]; then
-	echo "Usage: add-page <name of the page>"
+if [ "$#" -lt 1 ]; then
+	echo "Usage: new-page <name of the page> [parent page]"
 	exit 1
 fi
 
 # Get the page name from the command-line argument
 PAGE_NAME=$1
+
+# Get the parent page name from the command-line argument (if provided)
+PARENT_PAGE_NAME=$2
 
 # Convert the page name to camel case for folder name
 function toCamelCase() {
@@ -42,11 +45,22 @@ if [ ! -d "$PAGES_DIR" ]; then
 	mkdir "$PAGES_DIR"
 fi
 
+# If a parent page is provided, create the parent page directory
+if [ -n "$PARENT_PAGE_NAME" ]; then
+	PARENT_PAGE_DIR="$PAGES_DIR/$PARENT_PAGE_NAME"
+	if [ ! -d "$PARENT_PAGE_DIR" ]; then
+		echo "Error: $PARENT_PAGE_DIR not a valid directory."
+		exit 1
+	fi
+else
+	PARENT_PAGE_DIR="$PAGES_DIR"
+fi
+
 # Generate the folder name in camel case
 FOLDER_NAME="$(toCamelCase $PAGE_NAME)Page"
 
-# Create the folder inside the "pages" directory
-mkdir "$PAGES_DIR/$FOLDER_NAME"
+# Create the folder inside the parent page directory
+mkdir "$PARENT_PAGE_DIR/$FOLDER_NAME"
 
 # Convert the page name to Pascal case for file names
 PASCAL_CASE_NAME="$(toPascalCase $PAGE_NAME)"
@@ -94,12 +108,12 @@ export class ${PASCAL_CASE_NAME}Checkers {
 }"
 
 # Create LoginPage.ts file and write the code
-echo "$LOGIN_PAGE_CODE" >"$PAGES_DIR/$FOLDER_NAME/${PASCAL_CASE_NAME}Page.ts"
+echo "$LOGIN_PAGE_CODE" >"$PAGES_DIR/$PARENT_PAGE_NAME/$FOLDER_NAME/${PASCAL_CASE_NAME}Page.ts"
 
 # Create LoginLocators.ts file and write the code
-echo "$LOGIN_LOCATORS_CODE" >"$PAGES_DIR/$FOLDER_NAME/${PASCAL_CASE_NAME}Locators.ts"
+echo "$LOGIN_LOCATORS_CODE" >"$PAGES_DIR/$PARENT_PAGE_NAME/$FOLDER_NAME/${PASCAL_CASE_NAME}Locators.ts"
 
 # Create LoginCheckers.ts file and write the code
-echo "$LOGIN_CHECKERS_CODE" >"$PAGES_DIR/$FOLDER_NAME/${PASCAL_CASE_NAME}Checkers.ts"
+echo "$LOGIN_CHECKERS_CODE" >"$PAGES_DIR/$PARENT_PAGE_NAME/$FOLDER_NAME/${PASCAL_CASE_NAME}Checkers.ts"
 
 echo "Page created successfully!"
