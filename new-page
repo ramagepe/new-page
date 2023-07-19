@@ -1,0 +1,105 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]; then
+	echo "Usage: add-page <name of the page>"
+	exit 1
+fi
+
+# Get the page name from the command-line argument
+PAGE_NAME=$1
+
+# Convert the page name to camel case for folder name
+function toCamelCase() {
+	local string="$1"
+	local words=($string)
+	local result=""
+
+	for word in "${words[@]}"; do
+		result+=$(tr '[:lower:]' '[:upper:]' <<<${word:0:1})
+		result+=$(tr '[:upper:]' '[:lower:]' <<<${word:1})
+	done
+
+	echo "$result"
+}
+
+# Convert the page name to Pascal case for file names
+function toPascalCase() {
+	local string="$1"
+	local words=($string)
+	local result=""
+
+	for word in "${words[@]}"; do
+		result+=$(tr '[:lower:]' '[:upper:]' <<<${word:0:1})
+		result+="${word:1}"
+	done
+
+	echo "$result"
+}
+
+# Create the "pages" directory if it doesn't exist
+PAGES_DIR="pages"
+if [ ! -d "$PAGES_DIR" ]; then
+	mkdir "$PAGES_DIR"
+fi
+
+# Generate the folder name in camel case
+FOLDER_NAME="$(toCamelCase $PAGE_NAME)Page"
+
+# Create the folder inside the "pages" directory
+mkdir "$PAGES_DIR/$FOLDER_NAME"
+
+# Convert the page name to Pascal case for file names
+PASCAL_CASE_NAME="$(toPascalCase $PAGE_NAME)"
+
+# Create the code for LoginPage.ts
+LOGIN_PAGE_CODE="import { Page } from \"@playwright/test\";
+import { ${PASCAL_CASE_NAME}Locators } from \"./${PASCAL_CASE_NAME}Locators\";
+import { ${PASCAL_CASE_NAME}Checkers } from \"./${PASCAL_CASE_NAME}Checkers\";
+
+export class ${FOLDER_NAME} {
+  readonly page: Page;
+  readonly locate: ${PASCAL_CASE_NAME}Locators;
+  readonly check: ${PASCAL_CASE_NAME}Checkers;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.locate = new ${PASCAL_CASE_NAME}Locators(page);
+    this.check = new ${PASCAL_CASE_NAME}Checkers(page);
+  }
+}"
+
+# Create the code for LoginLocators.ts
+LOGIN_LOCATORS_CODE="import { Page } from \"@playwright/test\";
+
+export class ${PASCAL_CASE_NAME}Locators {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+}"
+
+# Create the code for LoginCheckers.ts
+LOGIN_CHECKERS_CODE="import { Page } from \"@playwright/test\";
+import { ${PASCAL_CASE_NAME}Locators } from \"./${PASCAL_CASE_NAME}Locators\";
+
+export class ${PASCAL_CASE_NAME}Checkers {
+  readonly page: Page;
+  private readonly locate: ${PASCAL_CASE_NAME}Locators;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.locate = new ${PASCAL_CASE_NAME}Locators(page);
+  }
+}"
+
+# Create LoginPage.ts file and write the code
+echo "$LOGIN_PAGE_CODE" >"$PAGES_DIR/$FOLDER_NAME/${PASCAL_CASE_NAME}Page.ts"
+
+# Create LoginLocators.ts file and write the code
+echo "$LOGIN_LOCATORS_CODE" >"$PAGES_DIR/$FOLDER_NAME/${PASCAL_CASE_NAME}Locators.ts"
+
+# Create LoginCheckers.ts file and write the code
+echo "$LOGIN_CHECKERS_CODE" >"$PAGES_DIR/$FOLDER_NAME/${PASCAL_CASE_NAME}Checkers.ts"
+
+echo "Page created successfully!"
